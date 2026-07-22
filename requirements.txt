@@ -1,0 +1,15 @@
+langchain
+langchain-community
+langchain-chroma
+langchain-ollama
+langgraph
+chromadb
+pdfplumber
+pillow
+streamlit
+pandas
+pydub
+SpeechRecognition
+imageio-ffmpeg
+pyTelegramBotAPI
+python-dotenv

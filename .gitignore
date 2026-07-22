@@ -1,0 +1,30 @@
+# Entornos virtuales
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Configuración local de herramientas (no compartir entre máquinas)
+.claude/settings.local.json
+
+# Secretos y configuración local
+.env
+
+# Base de datos vectorial (se regenera con: python src/ingesta.py)
+db_vectorial/
+
+# Manuales del fabricante (documentación propietaria, no distribuir públicamente)
+datos/manuales/
+
+# Datos de uso local (historial de chats y feedback de usuarios)
+datos/chats/
+datos/feedback_log.json
+
+# Imágenes extraídas de los manuales durante la ingesta
+datos/imagenes/
+
+# Archivos temporales de audio (bot de Telegram / pruebas)
+*.ogg
+*.wav
+tmp_*.ogg
+tmp_*.wav
