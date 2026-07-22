@@ -11,137 +11,173 @@ from ingesta import ingestar_archivo_unico
 
 st.set_page_config(page_title="Asistente de Compresores", layout="wide", page_icon="⚙️")
 
-# --- ESTILOS FUTURISTAS (GLASSMORPHISM) ---
-futuristic_style = """
+# --- ESTILOS INDUSTRIALES (PANEL DE CONTROL TÉCNICO) ---
+industrial_style = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root {
+    --bg-0: #121212;
+    --bg-1: #1a1a1a;
+    --bg-2: #212121;
+    --panel-border: #333333;
+    --amber: #f0a020;
+    --amber-dim: #8a5c14;
+    --text-main: #e8e6e1;
+    --text-dim: #9a9a95;
+}
 
 html, body, [class*="css"] {
-    font-family: 'Outfit', sans-serif !important;
+    font-family: 'IBM Plex Sans', sans-serif !important;
+}
+code, pre, .stCodeBlock {
+    font-family: 'IBM Plex Mono', monospace !important;
 }
 #MainMenu {visibility: hidden;}
 header {visibility: hidden;}
 footer {visibility: hidden;}
 
-/* Fondo base Global - Dark Space Gradient */
+/* Fondo base Global - Graphite plano, sin degradados de color */
 .stApp {
-    background: radial-gradient(circle at 50% -20%, #15162c, #0a0a14, #000000) !important;
+    background: var(--bg-0) !important;
     background-attachment: fixed !important;
 }
 
-/* Glassmorphism Sidebar */
+/* Franja de advertencia industrial bajo el header */
+.stApp::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: repeating-linear-gradient(
+        45deg,
+        var(--amber), var(--amber) 12px,
+        #1a1a1a 12px, #1a1a1a 24px
+    );
+    z-index: 999;
+    opacity: 0.85;
+}
+
+/* Sidebar - panel sólido, sin blur */
 [data-testid="stSidebar"] {
-    background: rgba(10, 10, 20, 0.4) !important;
-    backdrop-filter: blur(16px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
-    border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background: var(--bg-1) !important;
+    border-right: 1px solid var(--panel-border) !important;
+}
+[data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+    color: var(--amber) !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em;
 }
 
 /* Chat Input */
 [data-testid="stChatInput"] {
-    background: rgba(20, 20, 35, 0.5) !important;
-    backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 24px !important;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
-    transition: all 0.3s ease-in-out !important;
+    background: var(--bg-2) !important;
+    border: 1px solid var(--panel-border) !important;
+    border-radius: 4px !important;
+    box-shadow: none !important;
+    transition: border-color 0.2s ease-in-out !important;
 }
 [data-testid="stChatInput"]:focus-within {
-    border: 1px solid rgba(168, 199, 250, 0.5) !important;
-    box-shadow: 0 0 15px rgba(168, 199, 250, 0.2) !important;
+    border: 1px solid var(--amber) !important;
+    box-shadow: 0 0 0 1px rgba(240, 160, 32, 0.25) !important;
 }
 [data-testid="stChatInput"] textarea {
-    color: #ffffff !important;
+    color: var(--text-main) !important;
 }
 
 /* Chat Messages Generales */
 [data-testid="stChatMessage"] {
     background-color: transparent !important;
-    padding: 1.5rem !important;
-    margin-bottom: 1rem;
-    border-radius: 16px !important;
-    animation: fadeIn 0.5s ease-out;
+    padding: 1.25rem 1.5rem !important;
+    margin-bottom: 0.85rem;
+    border-radius: 4px !important;
+    animation: fadeIn 0.25s ease-out;
 }
 
-/* User Message */
+/* User Message - panel neutro con acento lateral gris acero */
 [data-testid="stChatMessage"]:has(div:contains("👤")) {
-    background: linear-gradient(135deg, rgba(30, 45, 90, 0.4), rgba(15, 20, 40, 0.6)) !important;
-    backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(100, 150, 255, 0.15) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
-    border-radius: 20px 20px 0px 20px !important;
+    background: var(--bg-1) !important;
+    border: 1px solid var(--panel-border) !important;
+    border-left: 3px solid #5b6b7a !important;
+    box-shadow: none !important;
 }
 
-/* Bot Message */
-[data-testid="stChatMessage"]:has(div:contains("🤖")), [data-testid="stChatMessage"]:has(div:contains("⚙️")) {
-    background: linear-gradient(135deg, rgba(40, 20, 60, 0.3), rgba(15, 10, 25, 0.5)) !important;
-    backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(200, 100, 255, 0.1) !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
-    border-radius: 20px 20px 20px 0px !important;
+/* Bot Message - panel con acento lateral ámbar (señal industrial) */
+[data-testid="stChatMessage"]:has(div:contains("✨")), [data-testid="stChatMessage"]:has(div:contains("⚙️")) {
+    background: var(--bg-2) !important;
+    border: 1px solid var(--panel-border) !important;
+    border-left: 3px solid var(--amber) !important;
+    box-shadow: none !important;
 }
 
-/* Botones */
+/* Botones - estilo botón de panel de control, rectos */
 .stButton > button {
-    background: rgba(30, 35, 50, 0.5) !important;
-    backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    color: #e3e3e3 !important;
-    border-radius: 20px !important;
-    transition: all 0.3s ease !important;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
+    background: var(--bg-2) !important;
+    border: 1px solid var(--panel-border) !important;
+    color: var(--text-main) !important;
+    border-radius: 3px !important;
+    font-weight: 500 !important;
+    transition: all 0.15s ease !important;
+    box-shadow: none !important;
 }
 .stButton > button:hover {
-    background: rgba(60, 70, 100, 0.7) !important;
-    border-color: rgba(168, 199, 250, 0.6) !important;
-    color: #ffffff !important;
-    box-shadow: 0 0 15px rgba(168, 199, 250, 0.3) !important;
-    transform: translateY(-2px);
+    background: #2a2a2a !important;
+    border-color: var(--amber) !important;
+    color: var(--amber) !important;
+    box-shadow: none !important;
+    transform: none;
 }
 
 /* Expanders */
 [data-testid="stExpander"] {
-    background: rgba(20, 20, 30, 0.4) !important;
-    backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
-    border-radius: 16px !important;
+    background: var(--bg-1) !important;
+    border: 1px solid var(--panel-border) !important;
+    border-radius: 4px !important;
 }
 
 /* Selectbox */
 [data-baseweb="select"] > div {
-    background-color: rgba(20, 20, 35, 0.5) !important;
-    backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 12px !important;
-    color: white !important;
+    background-color: var(--bg-2) !important;
+    border: 1px solid var(--panel-border) !important;
+    border-radius: 3px !important;
+    color: var(--text-main) !important;
 }
 
 /* Tab Headers */
 [data-baseweb="tab-list"] {
     background-color: transparent !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-bottom: 1px solid var(--panel-border) !important;
 }
 [data-baseweb="tab"] {
-    color: #a0a0a0 !important;
+    color: var(--text-dim) !important;
+    font-weight: 500 !important;
 }
 [aria-selected="true"] {
-    color: #a8c7fa !important;
+    color: var(--amber) !important;
     background-color: transparent !important;
 }
 
+/* Métricas del panel de feedback */
+[data-testid="stMetricValue"] {
+    color: var(--amber) !important;
+}
+
 /* Texto principal */
-p, h1, h2, h3, h4, h5, h6, span {
-    color: #e3e3e3 !important;
-    text-shadow: 0 0 1px rgba(255,255,255,0.1);
+p, span {
+    color: var(--text-main) !important;
+}
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-main) !important;
+    font-weight: 600 !important;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(6px); }
     to { opacity: 1; transform: translateY(0); }
 }
 </style>
 """
-st.markdown(futuristic_style, unsafe_allow_html=True)
+st.markdown(industrial_style, unsafe_allow_html=True)
 
 CHATS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "datos", "chats")
 os.makedirs(CHATS_DIR, exist_ok=True)
