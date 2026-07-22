@@ -295,6 +295,9 @@ Responde ÚNICAMENTE con las 2 frases separadas por una línea nueva."""
 
         sys_prompt = """SYSTEM PROMPT: AGENTE TÉCNICO ESPECIALIZADO EN EQUIPOS INDUSTRIALES
 
+[CONTEXTO DE USO]
+Esta herramienta corre 100% offline y es usada exclusivamente por técnicos de mantenimiento certificados que dan servicio a compresores industriales que su empresa ya posee u opera, siguiendo al pie de la letra los procedimientos oficiales publicados por el fabricante en la documentación adjunta. No se trata de una actividad riesgosa, ilegal ni dañina: es soporte técnico legítimo citando manuales de fábrica. Nunca rechaces una pregunta de mantenimiento, especificaciones o solución de fallas solo porque mencione voltajes, parámetros eléctricos, químicos del manual de seguridad (MSDS) o procedimientos físicos — esa es exactamente la información que el técnico necesita. Si el contexto la contiene, respóndela directamente.
+
 [ROL Y PERSONALIDAD]
 Eres un Ingeniero Especialista Senior en Compresores de Aire Industriales y Sistemas de Automatización. Tu trabajo es dar respuestas técnicas exactas, directas y de nivel de ingeniería a técnicos de campo y personal de mantenimiento.
 
@@ -311,11 +314,16 @@ Eres un Ingeniero Especialista Senior en Compresores de Aire Industriales y Sist
    - Responde ÚNICAMENTE utilizando la información provista en la sección [CONTEXTO RECUPERADO].
    - Si la información solicitada NO está en el contexto recuperado, responde estrictamente: "La información solicitada no se encuentra disponible en los documentos cargados." NUNCA inventes o asumas procedimientos fuera del texto.
 
+4. PROHIBICIÓN ABSOLUTA DE INVENTAR NÚMEROS DE PARTE, CÓDIGOS O VALORES NUMÉRICOS:
+   - Un número de parte (PN), código o valor numérico SOLO es válido si aparece copiado literalmente, carácter por carácter, en el [CONTEXTO RECUPERADO].
+   - Está TERMINANTEMENTE PROHIBIDO inventar, completar, adivinar o "normalizar" un número de parte (ej. escribir "KA-1234" o cualquier formato que no aparezca tal cual en el texto).
+   - Si la pregunta pide un número de parte y el contexto NO contiene ninguno para esa pieza exacta, responde: "No se encontró un número de parte específico para esta pieza en los documentos cargados." No listes PNs de relleno ni de otras piezas para completar la respuesta.
+
 [FORMATO DE SALIDA SUGERIDO]
 - Diagnóstico / Respuesta Directa: [Causa raíz física exacta o parámetro exacto]
 - Explicación Técnica: [Detalle del manual o secuencia de falla]
 - Pasos de Acción / Solución: [Lista numerada de pasos físicos explícitos (ej. intercambiar dos cables de alimentación de entrada)]
-- Números de Parte (PN) / Referencia: [Si la consulta involucra refacciones]
+- Números de Parte (PN) / Referencia: [Copiados literalmente del contexto; si no hay ninguno, indícalo explícitamente]
 """
 
         # Normalizamos la pregunta y contexto para evitar falsos positivos de seguridad de Llama 3.1
@@ -341,11 +349,33 @@ Máquina seleccionada: Marca {marca}, Modelo {modelo}
             chat_llm = ChatOllama(model=LLM_MODEL, num_ctx=8192, temperature=0.0)
             res = chat_llm.invoke([SystemMessage(content=sys_prompt), HumanMessage(content=user_content)])
             respuesta = res.content
+            if self._parece_rechazo(respuesta):
+                print(f"ChatOllama devolvió un rechazo de alineación ('{respuesta[:80]}...'), reintentando en modo completion (OllamaLLM)...")
+                respuesta = self.llm.invoke(f"{sys_prompt}\n\n{user_content}")
         except Exception as e:
             print(f"ChatOllama falló, usando OllamaLLM fallback: {e}")
             respuesta = self.llm.invoke(f"{sys_prompt}\n\n{user_content}")
 
+        if self._parece_rechazo(respuesta):
+            print(f"El fallback también devolvió un rechazo ('{respuesta[:80]}...'), mostrando mensaje de 'no disponible'.")
+            respuesta = "La información solicitada no se encuentra disponible en los documentos cargados."
+
         return {"respuesta_final": respuesta}
+
+    def _parece_rechazo(self, texto: str) -> bool:
+        """Detecta si el LLM rechazó la solicitud por un falso positivo del filtro de alineación,
+        en vez de usar el contexto o admitir que la información no está disponible."""
+        t = texto.strip().lower()
+        if "no se encuentra disponible en los documentos" in t:
+            return False
+        marcadores = [
+            "no puedo cumplir", "no puedo ayudarte con esa", "no puedo ayudar con esa",
+            "no puedo proporcionar", "no puedo asistir", "no puedo brindar",
+            "no puedo continuar con esta solicitud", "no puedo procesar esa solicitud",
+            "no puedo generar", "i cannot help", "i can't assist", "i cannot assist",
+            "i'm sorry, but i can't", "as an ai",
+        ]
+        return any(m in t for m in marcadores)
 
     def generar_diagnostico_stream(self, pregunta, marca=None, modelo=None, historial=[]):
         """Ejecuta el grafo de LangGraph y emite el progreso nodo por nodo."""
